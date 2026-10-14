@@ -4,7 +4,6 @@ import { ViewPropTypes } from "deprecated-react-native-prop-types";
 import { StatusBar } from "expo-status-bar";
 import Bai01 from "./lap1/bai01";
 
-// Vá lỗi ViewPropTypes dành cho react-native-snap-carousel
 if (!View.propTypes) {
   View.propTypes = ViewPropTypes;
 }

@@ -70,7 +70,6 @@ const PRODUCT_DATA = [
 ];
 
 // ================= COMPONENT CAROUSEL =================
-// ✅ Tách riêng + memo → không bị reset khi cha re-render
 const BannerCarousel = React.memo(function BannerCarousel() {
   const [activeSlide, setActiveSlide] = useState(0);
   const carouselRef = useRef(null);
@@ -146,9 +145,9 @@ export default function Bai01() {
     <SafeAreaView style={styles.container}>
       {/* Header App */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Z-FASHION</Text>
+        <Text style={styles.logo}>Nhóm 7</Text>
         <View style={styles.cartContainer}>
-          <Text style={styles.cartIcon}>🛒</Text>
+          <Text style={styles.cartIcon}>mua</Text>
           {cartCount > 0 && (
             <View style={styles.cartBadge}>
               <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -165,10 +164,10 @@ export default function Bai01() {
         numColumns={2}
         ListHeaderComponent={
           <View>
-            <Text style={styles.sectionTitle}>🔥 Khuyến Mãi Hot</Text>
+            <Text style={styles.sectionTitle}>Khuyến Mãi Hot</Text>
             <BannerCarousel />
             <Text style={[styles.sectionTitle, { marginTop: 10 }]}>
-              👕 Mới Lên Kệ
+              Mới Lên Kệ
             </Text>
           </View>
         }
