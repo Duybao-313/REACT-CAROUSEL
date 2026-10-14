@@ -3,16 +3,24 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "deprecated-react-native-prop-types": "^5.0.0",
     "expo": "~57.0.21",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-snap-carousel": "^3.9.1",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@types/react-native-snap-carousel": "^3.8.13",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",

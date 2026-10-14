@@ -1,20 +1,19 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from "react";
+import { View } from "react-native";
+import { ViewPropTypes } from "deprecated-react-native-prop-types";
+import { StatusBar } from "expo-status-bar";
+import Bai01 from "./lap1/bai01";
+
+// Vá lỗi ViewPropTypes dành cho react-native-snap-carousel
+if (!View.propTypes) {
+  View.propTypes = ViewPropTypes;
+}
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <>
+      <Bai01 />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
