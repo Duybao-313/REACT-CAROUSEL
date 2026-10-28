@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Controls Icon Set & Code Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        yt: {
+                            red: '#FF0000',
+                            darkBg: '#0f0f0f',
+                            cardBg: '#1f1f1f',
+                            hoverBg: '#272727',
+                            border: '#383838'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f0f0f; color: #f1f1f1; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f0f0f; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* YouTube range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 13px;
+            width: 13px;
+            border-radius: 50%;
+            background: #FF0000;
+            cursor: pointer;
+            margin-top: -4px;
+            transition: transform 0.1s ease;
+        }
+        input[type=range]:hover::-webkit-slider-thumb {
+            transform: scale(1.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 5px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-100 selection:bg-red-600 selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- YouTube Icon Set Data (Pristine YouTube Vector Paths) ---
+        const YOUTUBE_ICONS = [
+            {
+                id: 'play',
+                name: 'Play',
+                category: 'Playback',
+                tags: ['start', 'media', 'video', 'player'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M8 5v14l11-7z"/>'
+            },
+            {
+                id: 'pause',
+                name: 'Pause',
+                category: 'Playback',
+                tags: ['stop', 'freeze', 'wait'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+            },
+            {
+                id: 'replay',
+                name: 'Replay / Loop',
+                category: 'Playback',
+                tags: ['restart', 'repeat', 'again'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>'
+            },
+            {
+                id: 'skip-next',
+                name: 'Skip Next',
+                category: 'Playback',
+                tags: ['forward', 'track', 'next'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>'
+            },
+            {
+                id: 'skip-previous',
+                name: 'Skip Previous',
+                category: 'Playback',
+                tags: ['back', 'track', 'prev'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>'
+            },
+            {
+                id: 'rewind-10',
+                name: 'Rewind 10 Seconds (-10s)',
+                category: 'Playback',
+                tags: ['tua châm', 'backward', '10s', 'seek'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="14.5" font-size="7" font-weight="bold" text-anchor="middle" fill="currentColor" font-family="sans-serif">10</text>'
+            },
+            {
+                id: 'fast-forward-10',
+                name: 'Fast Forward 10 Seconds (+10s)',
+                category: 'Playback',
+                tags: ['tua nhanh', 'forward', '10s', 'seek'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="14.5" font-size="7" font-weight="bold" text-anchor="middle" fill="currentColor" font-family="sans-serif">10</text>'
+            },
+            {
+                id: 'volume-high',
+                name: 'Volume High',
+                category: 'Audio',
+                tags: ['sound', 'speaker', 'audio', 'loud'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>'
+            },
+            {
+                id: 'volume-low',
+                name: 'Volume Low',
+                category: 'Audio',
+                tags: ['sound', 'speaker', 'audio', 'quiet'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>'
+            },
+            {
+                id: 'volume-mute',
+                name: 'Volume Mute',
+                category: 'Audio',
+                tags: ['silent', 'no sound', 'off'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>'
+            },
+            {
+                id: 'subtitles',
+                name: 'Subtitles / Closed Captions (CC)',
+                category: 'Display',
+                tags: ['cc', 'text', 'captions', 'translation'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/>'
+            },
+            {
+                id: 'settings',
+                name: 'Settings / Gear',
+                category: 'Settings',
+                tags: ['options', 'cog', 'quality', 'speed'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>'
+            },
+            {
+                id: 'miniplayer',
+                name: 'Miniplayer (Picture in Picture)',
+                category: 'Display',
+                tags: ['pip', 'float', 'window', 'small'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7h9v6h-9z"/>'
+            },
+            {
+                id: 'theater-mode',
+                name: 'Theater Mode',
+                category: 'Display',
+                tags: ['wide', 'screen', 'layout'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/>'
+            },
+            {
+                id: 'fullscreen',
+                name: 'Fullscreen',
+                category: 'Display',
+                tags: ['expand', 'maximize', 'big'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>'
+            },
+            {
+                id: 'exit-fullscreen',
+                name: 'Exit Fullscreen',
+                category: 'Display',
+                tags: ['shrink', 'minimize', 'normal'],
+                viewBox: '0 0 24 24',
+                path: '<path fill="currentColor" d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>'
+            }
+        ];
+
+        // Format helper functions
+        const generateCode = (icon, format, color, size) => {
+            const hexColor = color === 'currentColor' ? 'currentColor' : color;
+            
+            switch (format) {
+                case 'svg':
+                    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${icon.viewBox}" fill="${hexColor}">\n  ${icon.path}\n</svg>`;
+                
+                case 'jsx':
+                    const componentName = icon.name.replace(/[^a-zA-Z0-9]/g, '') + 'Icon';
+                    return `export const ${componentName} = ({ size = ${size}, color = "${hexColor}", className = "" }) => (\n  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="${icon.viewBox}" fill={color} className={className}>\n    ${icon.path}\n  </svg>\n);`;
+                
+                case 'vue':
+                    return `<template>\n  <svg xmlns="http://www.w3.org/2000/svg" :width="size" :height="size" viewBox="${icon.viewBox}" :fill="color">\n    ${icon.path}\n  </svg>\n</template>\n\n<script>\nexport default {\n  name: '${icon.id}-icon',\n  props: {\n    size: { type: Number, default: ${size} },\n    color: { type: String, default: '${hexColor}' }\n  }\n}\n<\/script>`;
+
+                case 'css':
+                    const rawSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='${icon.viewBox}' fill='${encodeURIComponent(hexColor)}'>${icon.path}</svg>`;
+                    return `.icon-${icon.id} {\n  width: ${size}px;\n  height: ${size}px;\n  background-image: url("data:image/svg+xml,${rawSvg}");\n  background-repeat: no-repeat;\n  background-position: center;\n}`;
+                
+                default:
+                    return '';
+            }
+        };
+
+        function App() {
+            // App state
+            const [selectedCategory, setSelectedCategory] = useState('All');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [iconColor, setIconColor] = useState('#FFFFFF');
+            const [iconSize, setIconSize] = useState(24);
+            const [codeFormat, setCodeFormat] = useState('svg');
+            const [activeModalIcon, setActiveModalIcon] = useState(null);
+            const [toastMessage, setToastMessage] = useState(null);
+
+            // Live YouTube Player State
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentTime, setCurrentTime] = useState(84); // 1:24
+            const [duration] = useState(255); // 4:15
+            const [volume, setVolume] = useState(80);
+            const [isMuted, setIsMuted] = useState(false);
+            const [subtitlesEnabled, setSubtitlesEnabled] = useState(true);
+            const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+            const [playbackRate, setPlaybackRate] = useState('1.0x');
+            const [videoQuality, setVideoQuality] = useState('1080p60');
+            const [isTheater, setIsTheater] = useState(false);
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            const [actionFeedback, setActionFeedback] = useState(null);
+
+            const canvasRef = useRef(null);
+
+            // Show Toast Notification
+            const triggerToast = (msg) => {
+                setToastMessage(msg);
+                setTimeout(() => setToastMessage(null), 3000);
+            };
+
+            // Copy to Clipboard logic
+            const copyToClipboard = (text, label) => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    triggerToast(`Đã sao chép mã ${label}!`);
+                } catch (err) {
+                    triggerToast('Lỗi khi sao chép!');
+                }
+                document.body.removeChild(textarea);
+            };
+
+            // Action Feedback overlay on Player
+            const triggerActionFeedback = (text) => {
+                setActionFeedback(text);
+                setTimeout(() => setActionFeedback(null), 700);
+            };
+
+            // Player logic: Time update ticker
+            useEffect(() => {
+                let interval;
+                if (isPlaying) {
+                    interval = setInterval(() => {
+                        setCurrentTime(prev => {
+                            if (prev >= duration) {
+                                setIsPlaying(false);
+                                return 0;
+                            }
+                            return prev + 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [isPlaying, duration]);
+
+            // Draw dynamic animated canvas background for video player
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                let animationId;
+                let step = 0;
+
+                const render = () => {
+                    step += 0.02;
+                    ctx.fillStyle = '#0a0a12';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Draw animated dynamic waves / neon shapes
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#1e1b4b');
+                    gradient.addColorStop(0.5, '#311042');
+                    gradient.addColorStop(1, '#000000');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Moving audio visualizer waves
+                    ctx.beginPath();
+                    ctx.moveTo(0, canvas.height / 2);
+                    for (let i = 0; i < canvas.width; i += 10) {
+                        const y = Math.sin(i * 0.01 + step) * (isPlaying ? 25 : 5) + canvas.height / 2;
+                        ctx.lineTo(i, y);
+                    }
+                    ctx.lineTo(canvas.width, canvas.height);
+                    ctx.lineTo(0, canvas.height);
+                    ctx.fillStyle = isPlaying ? 'rgba(255, 0, 85, 0.25)' : 'rgba(100, 100, 100, 0.1)';
+                    ctx.fill();
+
+                    // Ambient glow sphere
+                    const centerX = canvas.width / 2 + Math.cos(step * 0.5) * 50;
+                    const centerY = canvas.height / 2 + Math.sin(step * 0.5) * 20;
+                    const radial = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, 180);
+                    radial.addColorStop(0, isPlaying ? 'rgba(255, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)');
+                    radial.addColorStop(1, 'transparent');
+                    ctx.fillStyle = radial;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 180, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    animationId = requestAnimationFrame(render);
+                };
+
+                render();
+                return () => cancelAnimationFrame(animationId);
+            }, [isPlaying]);
+
+            // Helper to format time strings (e.g. 01:24)
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+            };
+
+            // Fast forward / Rewind handlers
+            const handleRewind = () => {
+                setCurrentTime(prev => Math.max(0, prev - 10));
+                triggerActionFeedback('-10s');
+            };
+
+            const handleFastForward = () => {
+                setCurrentTime(prev => Math.min(duration, prev + 10));
+                triggerActionFeedback('+10s');
+            };
+
+            // Filter icons
+            const categories = ['All', 'Playback', 'Audio', 'Display', 'Settings'];
+            const filteredIcons = YOUTUBE_ICONS.filter(icon => {
+                const matchesCat = selectedCategory === 'All' || icon.category === selectedCategory;
+                const matchesQuery = searchQuery === '' || 
+                    icon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    icon.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesCat && matchesQuery;
+            });
+
+            return (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    
+                    {/* Header */}
+                    <header className="flex flex-col md:flex-row md:items-center justify-between border-b border-yt-border pb-6 mb-8 gap-4">
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-red-600 rounded-2xl shadow-lg shadow-red-600/30 text-white flex items-center justify-center">
+                                    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                                        YouTube Controls Icon Generator
+                                    </h1>
+                                    <p className="text-sm text-gray-400 mt-0.5">
+                                        Bộ icon trình phát video YouTube chuẩn vector, tương tác trực tiếp & copy mã SVG / React
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 bg-yt-hoverBg border border-yt-border rounded-full text-xs font-medium text-gray-300">
+                                16 High-Precision SVGs
+                            </span>
+                            <span className="px-3 py-1 bg-red-950/60 border border-red-800/50 text-red-400 rounded-full text-xs font-semibold">
+                                YouTube Spec
+                            </span>
+                        </div>
+                    </header>
+
+                    {/* Interactive YouTube Video Player Preview */}
+                    <section className="mb-12">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                                Interactive YouTube Media Player Preview
+                            </h2>
+                            <span className="text-xs text-gray-400">Thử nghiệm trực tiếp các nút bấm bên dưới</span>
+                        </div>
+
+                        <div className={`relative bg-black rounded-xl overflow-hidden shadow-2xl border border-yt-border transition-all duration-300 ${isTheater ? 'max-w-none' : 'max-w-4xl mx-auto'}`}>
+                            {/* Video Display Area */}
+                            <div className="relative aspect-video w-full bg-black flex items-center justify-center overflow-hidden">
+                                <canvas ref={canvasRef} width="800" height="450" className="w-full h-full object-cover" />
+                                
+                                {/* On-screen action feedback (e.g. +10s, Play, Pause) */}
+                                {actionFeedback && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="bg-black/80 text-white font-bold text-xl px-6 py-3 rounded-full border border-white/20 shadow-2xl backdrop-blur-md animate-bounce">
+                                            {actionFeedback}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Subtitles Overlay */}
+                                {subtitlesEnabled && isPlaying && (
+                                    <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none">
+                                        <div className="bg-black/85 text-yellow-300 px-3 py-1 rounded text-sm sm:text-base font-medium border border-yellow-500/20 shadow-lg tracking-wide">
+                                            ♪ [Âm nhạc sôi động - YouTube Player Control Demo] ♪
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Center Big Play Button overlay if paused */}
+                                {!isPlaying && (
+                                    <button 
+                                        onClick={() => setIsPlaying(true)}
+                                        className="absolute p-5 rounded-full bg-black/60 text-white hover:bg-red-600 hover:scale-110 transition duration-200 backdrop-blur-sm border border-white/10 group"
+                                        title="Play Video"
+                                    >
+                                        <svg className="w-12 h-12 translate-x-0.5" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </button>
+                                )}
+
+                                {/* Settings Popover Menu */}
+                                {showSettingsMenu && (
+                                    <div className="absolute bottom-14 right-4 bg-yt-cardBg/95 backdrop-blur-md border border-yt-border rounded-lg shadow-2xl p-3 w-56 text-sm z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                        <div className="font-semibold text-gray-300 border-b border-yt-border pb-2 mb-2 flex items-center justify-between">
+                                            <span>Cài đặt trình phát</span>
+                                            <button onClick={() => setShowSettingsMenu(false)} className="text-gray-400 hover:text-white">✕</button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between hover:bg-yt-hoverBg p-1.5 rounded cursor-pointer">
+                                                <span className="text-gray-300">Tốc độ phát</span>
+                                                <select 
+                                                    value={playbackRate} 
+                                                    onChange={(e) => setPlaybackRate(e.target.value)}
+                                                    className="bg-black text-xs text-red-400 border border-yt-border rounded px-1.5 py-0.5"
+                                                >
+                                                    <option>0.5x</option>
+                                                    <option>1.0x</option>
+                                                    <option>1.25x</option>
+                                                    <option>1.5x</option>
+                                                    <option>2.0x</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center justify-between hover:bg-yt-hoverBg p-1.5 rounded cursor-pointer">
+                                                <span className="text-gray-300">Chất lượng</span>
+                                                <select 
+                                                    value={videoQuality} 
+                                                    onChange={(e) => setVideoQuality(e.target.value)}
+                                                    className="bg-black text-xs text-red-400 border border-yt-border rounded px-1.5 py-0.5"
+                                                >
+                                                    <option>1080p60 HD</option>
+                                                    <option>720p60</option>
+                                                    <option>480p</option>
+                                                    <option>360p</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* YouTube Bottom Control Bar */}
+                            <div className="bg-gradient-to-t from-black via-black/90 to-transparent p-3 pt-2">
+                                {/* Timeline Scrub Bar */}
+                                <div className="relative group mb-2 flex items-center">
+                                    <input 
+                                        type="range" 
+                                        min="0" 
+                                        max={duration} 
+                                        value={currentTime} 
+                                        onChange={(e) => setCurrentTime(Number(e.target.value))}
+                                        className="w-full h-1.5 bg-gray-700 accent-red-600 rounded-lg cursor-pointer"
+                                    />
+                                </div>
+
+                                {/* Control Buttons Row */}
+                                <div className="flex items-center justify-between text-white select-none">
+                                    {/* Left Controls */}
+                                    <div className="flex items-center space-x-1 sm:space-x-2">
+                                        {/* Play / Pause Toggle */}
+                                        <button 
+                                            onClick={() => { setIsPlaying(!isPlaying); triggerActionFeedback(isPlaying ? 'Pause' : 'Play'); }}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-white"
+                                            title={isPlaying ? "Tạm dừng (k)" : "Phát (k)"}
+                                        >
+                                            {isPlaying ? (
+                                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                            ) : (
+                                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                            )}
+                                        </button>
+
+                                        {/* Rewind -10s */}
+                                        <button 
+                                            onClick={handleRewind}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-gray-200 hover:text-white"
+                                            title="Tua lùi 10 giây"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                                                <text x="12" y="14.5" fontSize="7" fontWeight="bold" textAnchor="middle" fill="currentColor" fontFamily="sans-serif">10</text>
+                                            </svg>
+                                        </button>
+
+                                        {/* Fast Forward +10s */}
+                                        <button 
+                                            onClick={handleFastForward}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-gray-200 hover:text-white"
+                                            title="Tua tới 10 giây"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                                                <text x="12" y="14.5" fontSize="7" fontWeight="bold" textAnchor="middle" fill="currentColor" fontFamily="sans-serif">10</text>
+                                            </svg>
+                                        </button>
+
+                                        {/* Skip Next */}
+                                        <button 
+                                            onClick={() => triggerActionFeedback('Skip Next')}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-gray-200 hover:text-white"
+                                            title="Video tiếp theo"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                                        </button>
+
+                                        {/* Volume & Hover Slider */}
+                                        <div className="flex items-center group relative">
+                                            <button 
+                                                onClick={() => setIsMuted(!isMuted)}
+                                                className="p-2 hover:bg-white/10 rounded-full transition text-gray-200 hover:text-white"
+                                                title={isMuted ? "Bật âm thanh (m)" : "Tắt tiếng (m)"}
+                                            >
+                                                {isMuted || volume === 0 ? (
+                                                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                                                ) : volume < 50 ? (
+                                                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
+                                                ) : (
+                                                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                                )}
+                                            </button>
+                                            
+                                            <input 
+                                                type="range" 
+                                                min="0" 
+                                                max="100" 
+                                                value={isMuted ? 0 : volume}
+                                                onChange={(e) => { setVolume(Number(e.target.value)); setIsMuted(false); }}
+                                                className="w-0 group-hover:w-20 transition-all duration-200 opacity-0 group-hover:opacity-100 h-1 accent-red-600 bg-gray-600 rounded cursor-pointer ml-1"
+                                            />
+                                        </div>
+
+                                        {/* Time Display */}
+                                        <div className="text-xs font-medium text-gray-300 ml-2 select-none">
+                                            {formatTime(currentTime)} / {formatTime(duration)}
+                                        </div>
+                                    </div>
+
+                                    {/* Right Controls */}
+                                    <div className="flex items-center space-x-1">
+                                        {/* Subtitles (CC) Button */}
+                                        <button 
+                                            onClick={() => setSubtitlesEnabled(!subtitlesEnabled)}
+                                            className={`p-2 rounded-full transition ${subtitlesEnabled ? 'text-red-500 border-b-2 border-red-600' : 'text-gray-300 hover:text-white'}`}
+                                            title="Phụ đề (c)"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/>
+                                            </svg>
+                                        </button>
+
+                                        {/* Settings Button */}
+                                        <button 
+                                            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                                            className={`p-2 rounded-full transition transform ${showSettingsMenu ? 'rotate-45 text-white' : 'text-gray-300 hover:text-white'}`}
+                                            title="Cài đặt"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                                            </svg>
+                                        </button>
+
+                                        {/* Miniplayer (PiP) Button */}
+                                        <button 
+                                            onClick={() => triggerActionFeedback('Miniplayer (PiP)')}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-gray-300 hover:text-white"
+                                            title="Trình phát thu nhỏ (i)"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7h9v6h-9z"/>
+                                            </svg>
+                                        </button>
+
+                                        {/* Theater Mode Button */}
+                                        <button 
+                                            onClick={() => setIsTheater(!isTheater)}
+                                            className={`p-2 rounded-full transition ${isTheater ? 'text-red-500' : 'text-gray-300 hover:text-white'}`}
+                                            title="Chế độ rạp phim (t)"
+                                        >
+                                            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/>
+                                            </svg>
+                                        </button>
+
+                                        {/* Fullscreen Button */}
+                                        <button 
+                                            onClick={() => setIsFullscreen(!isFullscreen)}
+                                            className="p-2 hover:bg-white/10 rounded-full transition text-gray-300 hover:text-white"
+                                            title="Toàn màn hình (f)"
+                                        >
+                                            {isFullscreen ? (
+                                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                                            ) : (
+                                                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Global Customizer Toolbar */}
+                    <section className="bg-yt-cardBg border border-yt-border rounded-xl p-5 mb-8 shadow-xl">
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            
+                            {/* Size & Color Customizers */}
+                            <div className="flex flex-wrap items-center gap-6">
+                                {/* Color Selector */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1.5">Màu sắc Icon</label>
+                                    <div className="flex items-center space-x-2">
+                                        {[
+                                            { label: 'Trắng', value: '#FFFFFF' },
+                                            { label: 'Đỏ YouTube', value: '#FF0000' },
+                                            { label: 'Xanh Cyan', value: '#00F0FF' },
+                                            { label: 'Vàng', value: '#FFD700' },
+                                        ].map(preset => (
+                                            <button
+                                                key={preset.value}
+                                                onClick={() => setIconColor(preset.value)}
+                                                className={`w-7 h-7 rounded-full border-2 transition-transform ${iconColor === preset.value ? 'scale-110 border-white ring-2 ring-red-500' : 'border-transparent hover:scale-105'}`}
+                                                style={{ backgroundColor: preset.value }}
+                                                title={preset.label}
+                                            />
+                                        ))}
+                                        {/* Color Picker input */}
+                                        <div className="relative flex items-center">
+                                            <input 
+                                                type="color" 
+                                                value={iconColor}
+                                                onChange={(e) => setIconColor(e.target.value)}
+                                                className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                                            />
+                                        </div>
+                                        <span className="text-xs font-mono text-gray-400 uppercase bg-black/40 px-2 py-1 rounded border border-yt-border">
+                                            {iconColor}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Size Slider */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="text-xs font-medium text-gray-400">Kích thước Pixel</label>
+                                        <span className="text-xs font-mono text-red-500 font-bold">{iconSize}px</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <input 
+                                            type="range" 
+                                            min="16" 
+                                            max="64" 
+                                            step="4"
+                                            value={iconSize} 
+                                            onChange={(e) => setIconSize(Number(e.target.value))}
+                                            className="w-32 accent-red-600"
+                                        />
+                                        <div className="flex gap-1">
+                                            {[20, 24, 32, 48].map(sz => (
+                                                <button 
+                                                    key={sz}
+                                                    onClick={() => setIconSize(sz)}
+                                                    className={`px-2 py-0.5 text-xs rounded border ${iconSize === sz ? 'bg-red-600 border-red-500 text-white' : 'bg-yt-hoverBg border-yt-border text-gray-400 hover:text-white'}`}
+                                                >
+                                                    {sz}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Format Exporter */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-400 mb-1.5">Định dạng Xuất Mã</label>
+                                <div className="inline-flex p-1 bg-black/50 border border-yt-border rounded-lg">
+                                    {[
+                                        { id: 'svg', label: 'SVG HTML' },
+                                        { id: 'jsx', label: 'React JSX' },
+                                        { id: 'vue', label: 'Vue 3' },
+                                        { id: 'css', label: 'CSS Data URI' }
+                                    ].map(fmt => (
+                                        <button
+                                            key={fmt.id}
+                                            onClick={() => setCodeFormat(fmt.id)}
+                                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${codeFormat === fmt.id ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            {fmt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Filter & Search Bar */}
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+                        {/* Category Tabs */}
+                        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-3.5 py-1.5 text-xs font-medium rounded-full border transition ${selectedCategory === cat ? 'bg-white text-black border-white font-semibold' : 'bg-yt-cardBg border-yt-border text-gray-300 hover:bg-yt-hoverBg'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative w-full md:w-72">
+                            <input 
+                                type="text"
+                                placeholder="Tìm kiếm icon (e.g. tua nhanh, play, volume)..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-yt-cardBg border border-yt-border rounded-xl px-3.5 py-2 pl-9 text-xs text-gray-200 focus:outline-none focus:border-red-500 transition"
+                            />
+                            <svg className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                            </svg>
+                            {searchQuery && (
+                                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-2.5 text-xs text-gray-400 hover:text-white">✕</button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Icon Gallery Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                        {filteredIcons.map(icon => {
+                            const codeSnippet = generateCode(icon, codeFormat, iconColor, iconSize);
+
+                            return (
+                                <div 
+                                    key={icon.id}
+                                    className="group relative bg-yt-cardBg border border-yt-border hover:border-red-500/50 rounded-2xl p-5 flex flex-col items-center justify-between transition-all duration-200 hover:shadow-xl hover:shadow-red-950/20"
+                                >
+                                    {/* Category badge */}
+                                    <span className="self-start text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-black/40 px-2 py-0.5 rounded border border-yt-border/50">
+                                        {icon.category}
+                                    </span>
+
+                                    {/* Icon Dynamic Preview */}
+                                    <div className="my-6 flex items-center justify-center p-4 rounded-xl bg-black/30 border border-white/5 group-hover:bg-black/60 transition group-hover:scale-105">
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            width={iconSize} 
+                                            height={iconSize} 
+                                            viewBox={icon.viewBox} 
+                                            fill={iconColor}
+                                            dangerouslySetInnerHTML={{ __html: icon.path }}
+                                        />
+                                    </div>
+
+                                    {/* Icon Info */}
+                                    <div className="text-center w-full mb-3">
+                                        <h3 className="text-sm font-semibold text-white group-hover:text-red-400 transition truncate" title={icon.name}>
+                                            {icon.name}
+                                        </h3>
+                                        <p className="text-[11px] font-mono text-gray-400 mt-0.5">#{icon.id}</p>
+                                    </div>
+
+                                    {/* Card Actions */}
+                                    <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-yt-border/60">
+                                        <button 
+                                            onClick={() => copyToClipboard(codeSnippet, `${icon.name} (${codeFormat.toUpperCase()})`)}
+                                            className="w-full bg-red-600/90 hover:bg-red-600 text-white text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition shadow-sm"
+                                        >
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                                            Copy
+                                        </button>
+
+                                        <button 
+                                            onClick={() => setActiveModalIcon(icon)}
+                                            className="w-full bg-yt-hoverBg hover:bg-yt-border text-gray-300 hover:text-white text-xs font-medium py-1.5 rounded-lg flex items-center justify-center gap-1 transition"
+                                        >
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            Mã Code
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {filteredIcons.length === 0 && (
+                        <div className="text-center py-16 bg-yt-cardBg border border-yt-border rounded-2xl">
+                            <p className="text-gray-400 text-sm">Không tìm thấy icon nào khớp với từ khóa "{searchQuery}"</p>
+                            <button onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }} className="mt-3 text-xs text-red-500 underline">
+                                Xóa bộ lọc
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Modal Inspector Component */}
+                    {activeModalIcon && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                            <div className="bg-yt-cardBg border border-yt-border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl">
+                                <div className="p-5 border-b border-yt-border flex items-center justify-between bg-black/40">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-black rounded-lg border border-yt-border">
+                                            <svg 
+                                                width="28" 
+                                                height="28" 
+                                                viewBox={activeModalIcon.viewBox} 
+                                                fill={iconColor} 
+                                                dangerouslySetInnerHTML={{ __html: activeModalIcon.path }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-white text-base">{activeModalIcon.name}</h3>
+                                            <p className="text-xs text-gray-400">Xem chi tiết mã nguồn đa ngôn ngữ</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setActiveModalIcon(null)}
+                                        className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-yt-hoverBg"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="p-6 space-y-4">
+                                    {/* Format Selector inside Modal */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-gray-400 font-medium">Mã nguồn generated:</span>
+                                        <div className="flex gap-2">
+                                            {['svg', 'jsx', 'vue', 'css'].map(fmt => (
+                                                <button
+                                                    key={fmt}
+                                                    onClick={() => setCodeFormat(fmt)}
+                                                    className={`px-2.5 py-1 text-xs rounded uppercase font-mono ${codeFormat === fmt ? 'bg-red-600 text-white font-bold' : 'bg-black text-gray-400 hover:text-white'}`}
+                                                >
+                                                    {fmt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Code Box */}
+                                    <div className="relative">
+                                        <pre className="bg-black/90 text-gray-200 p-4 rounded-xl text-xs overflow-x-auto border border-yt-border leading-relaxed max-h-60">
+                                            {generateCode(activeModalIcon, codeFormat, iconColor, iconSize)}
+                                        </pre>
+                                        <button
+                                            onClick={() => copyToClipboard(generateCode(activeModalIcon, codeFormat, iconColor, iconSize), activeModalIcon.name)}
+                                            className="absolute top-3 right-3 bg-red-600 hover:bg-red-500 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow"
+                                        >
+                                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                                            Copy Code
+                                        </button>
+                                    </div>
+
+                                    {/* Integration Guide */}
+                                    <div className="bg-yt-darkBg p-3.5 rounded-xl border border-yt-border text-xs text-gray-400 space-y-1">
+                                        <p className="font-semibold text-gray-300">💡 Mẹo tích hợp vào dự án:</p>
+                                        <p>• Dùng <b>React JSX</b> trực tiếp trong dự án Next.js / Vite / CRA.</p>
+                                        <p>• Dùng <b>SVG HTML</b> chèn thẳng vào file HTML tĩnh hoặc ứng dụng bất kỳ.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Toast Notification */}
+                    {toastMessage && (
+                        <div className="fixed bottom-6 right-6 z-50 bg-red-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-red-400 animate-in slide-in-from-bottom-5 duration-200">
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            <span className="text-xs font-semibold">{toastMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <footer className="mt-16 border-t border-yt-border pt-6 text-center text-xs text-gray-400">
+                        <p>YouTube Media Player Controls Icon Set & Code Generator</p>
+                        <p className="mt-1">Thiết kế chuẩn vector YouTube specs • Tương thích với React, Vue, HTML5 & Tailwind CSS</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

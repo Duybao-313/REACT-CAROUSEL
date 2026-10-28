@@ -2,7 +2,7 @@ import React from "react";
 import { View } from "react-native";
 import { ViewPropTypes } from "deprecated-react-native-prop-types";
 import { StatusBar } from "expo-status-bar";
-import Bai02 from "./lap1/bai2";
+import Bai03 from "./lap1/bai03";
 
 if (!View.propTypes) {
   View.propTypes = ViewPropTypes;
@@ -11,7 +11,7 @@ if (!View.propTypes) {
 export default function App() {
   return (
     <>
-      <Bai02 />
+      <Bai03 />
       <StatusBar style="auto" />
     </>
   );
